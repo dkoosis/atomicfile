@@ -14,6 +14,16 @@ err := atomicfile.WriteFileFunc("big.log", 0o644, func(w io.Writer) error {
 })
 ```
 
+By default a missing parent directory is an error. Pass `WithMkdirAll` to
+create the missing parents first — durably: each directory the call creates is
+fsynced (`F_FULLFSYNC` on macOS) so the new directory chain, and the file inside
+it, survive a crash. Only newly created directories are fsynced; existing ones
+are left alone, and the default (error on a missing parent) is unchanged.
+
+```go
+err := atomicfile.WriteFile("var/state/app.json", data, 0o644, atomicfile.WithMkdirAll())
+```
+
 The package documentation carries the full motivation and — read it — the
 three cases where rename-replace is the **wrong** primitive: lock-files,
 live SQLite databases, and multi-writer read-modify-write files.
