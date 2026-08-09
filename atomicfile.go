@@ -28,6 +28,14 @@
 // defect hardcoded 0600 and silently stripped a file's mode); the perm
 // argument applies only when the target is new.
 //
+// # Creating the parent directory
+//
+// By default a write into a directory that does not exist fails. Pass
+// [WithMkdirAll] to create the missing chain first — durably, fsyncing the
+// parent of every directory it creates. A directory that has not been made
+// durable can vanish on power loss along with the write it held, which is this
+// package's own concern one level up from the file.
+//
 // # When NOT to use this package
 //
 // Rename-replace is the wrong primitive for three kinds of files:
@@ -57,17 +65,26 @@ import (
 // perm applies only when path does not yet exist; an existing file keeps its
 // permissions. On return with a nil error, the new content — and the
 // directory entry pointing at it — have been flushed to stable storage.
-func WriteFile(path string, data []byte, perm os.FileMode) error {
+//
+// The parent directory must already exist unless WithMkdirAll is passed.
+func WriteFile(path string, data []byte, perm os.FileMode, opts ...Option) error {
 	return WriteFileFunc(path, perm, func(w io.Writer) error {
 		_, err := w.Write(data)
 		return err
-	})
+	}, opts...)
 }
 
 // WriteFileFunc is WriteFile for streamed content: fn writes the body to w.
 // If fn returns an error, the target is untouched and the temporary file is
 // cleaned up.
-func WriteFileFunc(path string, perm os.FileMode, fn func(w io.Writer) error) error {
+func WriteFileFunc(path string, perm os.FileMode, fn func(w io.Writer) error, opts ...Option) error {
+	cfg := resolve(opts)
+	if cfg.mkdirAll {
+		if err := mkdirAllSync(filepath.Dir(path), cfg.dirPerm, syncDir); err != nil {
+			return err
+		}
+	}
+
 	pf, err := renameio.NewPendingFile(path,
 		renameio.WithExistingPermissions(),
 		renameio.WithPermissions(perm),
