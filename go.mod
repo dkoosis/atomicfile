@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/dkoosis/conform v0.1.2 // indirect
+	github.com/dkoosis/conform v0.2.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
