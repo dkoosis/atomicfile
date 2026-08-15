@@ -1,0 +1,17 @@
+# Beads Configuration File
+# This file configures default behavior for all bd commands in this repository.
+# All settings can also be set via environment variables (BD_* prefix)
+# or overridden with command-line flags.
+#
+# The three fleet-required declarations (conform bd-config rule): the tracked
+# file is the reviewable, clone-derivable source; `bd config set` mirrors it
+# into the live store.
+
+# Issue prefix for this repository (used by bd init)
+issue-prefix: "af"
+
+# Plans and dispatch audit trails resolve to the vault
+custom.plan_dir: "~/Projects/dk/Project/atomicfile/plans"
+
+# Off-machine recovery path for bead history (Dolt remote over git)
+sync.remote: "git+https://github.com/dkoosis/atomicfile.git"

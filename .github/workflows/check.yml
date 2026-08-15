@@ -1,18 +1,45 @@
 name: check
+
 on:
   push:
     branches: [main]
   pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  test:
+  check:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: go vet ./...
-      - run: go test -race ./...
+          check-latest: false
+
+      - name: golangci-lint (pinned in .sandbox/project.conf)
+        run: |
+          . ./.sandbox/project.conf
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
+            | sh -s -- -b "$(go env GOPATH)/bin" "$GOLANGCI_LINT_VERSION"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      # CI = the same gate a developer runs; no verb re-implemented in YAML
+      # (conform ci-gate rule). check runs vet + lint + test + build + conform.
+      - name: check
+        run: make check
+
+      # The pre-existing -race matrix coverage (linux + darwin fsync paths)
+      # survives as a make verb, not YAML.
+      - name: race
+        run: make race

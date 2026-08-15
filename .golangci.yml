@@ -1,0 +1,35 @@
+# atomicfile — fleet lint floor (bugclasses baseline, decision d7ea466a8172).
+# The floor guarantees the six error-handling linters below on top of
+# golangci's standard defaults; per-repo extras layer on top.
+
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - nilerr
+    - rowserrcheck
+    - noctx
+    - staticcheck    # explicit: a default, but the floor names it
+    - nolintlint
+
+  settings:
+    errcheck:
+      # STRICT. exclude-functions lists only calls whose dropped error is
+      # genuinely fine — never a path/package blanket.
+      exclude-functions:
+        - (io.Closer).Close
+        - (*os.File).Close
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Print
+        - fmt.Printf
+        - fmt.Println
+
+    nolintlint:
+      require-explanation: true   # //nolint without a reason fails
+      require-specific: true      # //nolint must name the linter
+
+  exclusions:
+    generated: lax
