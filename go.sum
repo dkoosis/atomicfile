@@ -1,5 +1,7 @@
 github.com/dkoosis/conform v0.1.2 h1:HzE/E/yy94s5FRQyY/GWok9VTCjIvmqHl7v9gAJ5GrM=
 github.com/dkoosis/conform v0.1.2/go.mod h1:TP6zWp9VK7MlmHNCHri0EhqZmHY3jAqUrUvSNhnosOk=
+github.com/dkoosis/conform v0.2.0 h1:w8spzU4WwFIA37/qln8zSKJVHZ81afvpU9oplWkkzwY=
+github.com/dkoosis/conform v0.2.0/go.mod h1:Zq32Tf2c7K8O2MPAja+pJfOWmbika4Wn5qCZoUdcKEQ=
 github.com/google/renameio/v2 v2.0.2 h1:qKZs+tfn+arruZZhQ7TKC/ergJunuJicWS6gLDt/dGw=
 github.com/google/renameio/v2 v2.0.2/go.mod h1:OX+G6WHHpHq3NVj7cAOleLOwJfcQ1s3uUJQCrr78SWo=
 golang.org/x/sys v0.47.0 h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=
