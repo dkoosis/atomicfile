@@ -116,6 +116,8 @@ func syncDir(dir string) error {
 	if err != nil {
 		return err
 	}
-	defer d.Close() //nolint:errcheck // read-only fd; the fsync is the operation that matters
+	// Read-only fd; the fsync is the operation that matters. (*os.File).Close
+	// is in the floor's errcheck exclude-functions — no directive needed.
+	defer d.Close()
 	return syncFile(d)
 }
