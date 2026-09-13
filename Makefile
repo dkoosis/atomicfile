@@ -44,3 +44,6 @@ vuln: ## Run govulncheck
 # (go.sum-verified); bumping the pin is a deliberate PR.
 selfcheck: ## Run conform (fleet SDLC checker) against this repo
 	go tool conform
+
+clean: ## Remove build outputs
+	go clean ./...
