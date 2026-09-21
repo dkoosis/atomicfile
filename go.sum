@@ -1,5 +1,5 @@
-github.com/dkoosis/conform-to-sdlc v0.3.0 h1:WDSzbY1RjqWxXW0dMfNp7aGd58fbp5HhXpzn3+UiRKA=
-github.com/dkoosis/conform-to-sdlc v0.3.0/go.mod h1:p5Nu8EntCJQ1k4yqTlAUDYRpdvpkebWjLcPJCVUgKlM=
+github.com/dkoosis/conform-to-sdlc v0.3.2 h1:ycK/sz0qkekePD5dRNsH5YbJTmuA463Wh507pZ+boMI=
+github.com/dkoosis/conform-to-sdlc v0.3.2/go.mod h1:p5Nu8EntCJQ1k4yqTlAUDYRpdvpkebWjLcPJCVUgKlM=
 github.com/google/renameio/v2 v2.0.2 h1:qKZs+tfn+arruZZhQ7TKC/ergJunuJicWS6gLDt/dGw=
 github.com/google/renameio/v2 v2.0.2/go.mod h1:OX+G6WHHpHq3NVj7cAOleLOwJfcQ1s3uUJQCrr78SWo=
 golang.org/x/sys v0.47.0 h1:o7XGOvZQCADBQQ4Y7VNq2dRWQR7JmOUW8Kxx4ZsNgWs=
