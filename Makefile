@@ -1,7 +1,7 @@
 # atomicfile Makefile
 #
 # Lib profile (conform.json): the verb contract minus deploy —
-#   check — fast gate: vet + lint + test + build + conform
+#   check — fast gate: vet + lint + test + build + conform-to-sdlc
 #   audit — exhaustive: check + race + govulncheck
 # Run `make help` for the full target list.
 
@@ -16,7 +16,7 @@ help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} \
 		/^[a-zA-Z0-9_-]+:.*?## / { printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-check: vet lint test build selfcheck ## Fast gate: vet + lint + test + build + conform
+check: vet lint test build selfcheck ## Fast gate: vet + lint + test + build + conform-to-sdlc
 	@echo "=== check pass ==="
 
 audit: check race vuln ## Exhaustive: check + race + govulncheck
@@ -40,10 +40,10 @@ race: ## Run tests under the race detector
 vuln: ## Run govulncheck
 	govulncheck ./...
 
-# Fleet gate (sd-th5.18): conform is pinned as a go.mod tool dependency
-# (go.sum-verified); bumping the pin is a deliberate PR.
-selfcheck: ## Run conform (fleet SDLC checker) against this repo
-	go tool conform
+# Fleet gate (sd-th5.18): conform-to-sdlc is pinned as a go.mod tool
+# dependency (go.sum-verified); bumping the pin is a deliberate PR.
+selfcheck: ## Run conform-to-sdlc (fleet SDLC checker) against this repo
+	go tool conform-to-sdlc
 
 clean: ## Remove build outputs
 	go clean ./...
