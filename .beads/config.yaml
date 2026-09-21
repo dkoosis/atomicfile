@@ -3,7 +3,7 @@
 # All settings can also be set via environment variables (BD_* prefix)
 # or overridden with command-line flags.
 #
-# The three fleet-required declarations (conform bd-config rule): the tracked
+# The three fleet-required declarations (conform-to-sdlc bd-config rule): the tracked
 # file is the reviewable, clone-derivable source; `bd config set` mirrors it
 # into the live store.
 
