@@ -1,6 +1,11 @@
 # atomicfile — fleet lint floor (bugclasses baseline, decision d7ea466a8172).
 # The floor guarantees the six error-handling linters below on top of
 # golangci's standard defaults; per-repo extras layer on top.
+#
+# The lintbrush ruleguard pack (bugclasses + modern.go) is layered on the
+# floor: the rule files under .golangci-rules/ are byte copies of
+# cc-plugins/plugins/lintbrush/gorules, refreshed by adopt-pack.sh and
+# guarded by `make pack-drift`.
 
 version: "2"
 
@@ -12,6 +17,8 @@ linters:
     - noctx
     - staticcheck    # explicit: a default, but the floor names it
     - nolintlint
+    - gocritic
+    - forbidigo
 
   settings:
     errcheck:
@@ -31,5 +38,31 @@ linters:
       require-explanation: true   # //nolint without a reason fails
       require-specific: true      # //nolint must name the linter
 
+    gocritic:
+      enabled-checks:
+        - ruleguard
+      settings:
+        ruleguard:
+          # ${base-path} = the .golangci.yml directory (golangci-lint v2).
+          # Rule 2 (raw-state-write) is opt-in and not listed here.
+          rules: "${base-path}/.golangci-rules/bugclasses.go,${base-path}/.golangci-rules/modern.go"
+          # Fail the run on rule-compile errors, don't silently skip them.
+          failOn: dsl
+
+    forbidigo:
+      # Pack rule 5: context.Background() deep in long-lived code should thread
+      # the caller/shutdown ctx. Types-aware so a `ctx.Background` field can't
+      # false-fire.
+      analyze-types: true
+      forbid:
+        - pattern: '^context\.Background$'
+          msg: "thread the caller/shutdown ctx; context.Background belongs only at a daemon's root (main/startup)"
+
   exclusions:
     generated: lax
+    rules:
+      # Rule 5 is scoped to this repo's layout: atomicfile is a library with
+      # no cmd/ or main.go, so a fresh root context is legitimate only in tests.
+      - linters: [forbidigo]
+        path: '_test\.go$'
+        text: 'context\.Background'
