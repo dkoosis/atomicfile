@@ -11,6 +11,8 @@ import (
 	"testing"
 )
 
+var errFsyncRefused = errors.New("fsync refused")
+
 func TestWithMkdirAll(t *testing.T) {
 	t.Run("creates the missing chain and writes", func(t *testing.T) {
 		root := t.TempDir()
@@ -122,12 +124,10 @@ func TestWithMkdirAll(t *testing.T) {
 		errs := make([]error, writers)
 		var wg sync.WaitGroup
 		for i := range writers {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				path := filepath.Join(dir, fmt.Sprintf("f-%d.txt", i))
 				errs[i] = WriteFile(path, []byte("x"), 0o644, WithMkdirAll(0o755))
-			}()
+			})
 		}
 		wg.Wait()
 
@@ -214,12 +214,11 @@ func TestMkdirAllSyncSkipsExistingDirs(t *testing.T) {
 // directory that is not durable is the bug this package exists to prevent.
 func TestMkdirAllSyncPropagatesSyncErrors(t *testing.T) {
 	root := t.TempDir()
-	wantErr := errors.New("fsync refused")
 
 	err := mkdirAllSync(filepath.Join(root, "a", "b"), 0o755, func(string) error {
-		return wantErr
+		return errFsyncRefused
 	})
-	if !errors.Is(err, wantErr) {
+	if !errors.Is(err, errFsyncRefused) {
 		t.Fatalf("err = %v, want the sync error", err)
 	}
 }
