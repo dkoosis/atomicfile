@@ -65,10 +65,10 @@ nilcheck: ## Run nilaway on this module's packages (pinned)
 	go run go.uber.org/nilaway/cmd/nilaway@$(NILAWAY_VER) -include-pkgs=$$(go list -m) ./...
 
 # deadcode lists each function no path from main reaches, and exits 0 either way,
-# so the target fails on any output. A library has no main: nothing to trace.
-deadcode: ## Fail on any function unreachable from main (deadcode, pinned)
-	@go list -f '{{.Name}}' ./... | grep -qx main || { echo "deadcode: no main package, nothing to trace"; exit 0; }; \
-	out=$$(go run golang.org/x/tools/cmd/deadcode@$(DEADCODE_VER) ./...) || { echo "deadcode: could not run"; exit 1; }; \
+# so the target fails on any output. A library has no main, so -test makes the
+# test binaries' mains the roots.
+deadcode: ## Fail on any function unreachable from main or a test (deadcode, pinned)
+	@out=$$(go run golang.org/x/tools/cmd/deadcode@$(DEADCODE_VER) -test ./...) || { echo "deadcode: could not run"; exit 1; }; \
 	if [ -n "$$out" ]; then echo "$$out"; exit 1; fi
 
 # omitemptyscalar exits 3 on a ,omitempty tag on a bool (a false lost on write).

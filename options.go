@@ -1,7 +1,6 @@
 package atomicfile
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -71,7 +70,7 @@ func mkdirAllSync(dir string, perm os.FileMode, sync func(string) error) error {
 			// Tolerate a concurrent creator winning the race, but only if
 			// what exists now is really a directory.
 			if fi, statErr := os.Stat(d); statErr != nil || !fi.IsDir() {
-				return fmt.Errorf("atomicfile: create directory: %w", err)
+				return err //nolint:wrapcheck // callers test os.IsNotExist and os.IsPermission, which do not unwrap fmt wrappers
 			}
 		}
 		if err := sync(filepath.Dir(d)); err != nil {
@@ -94,7 +93,7 @@ func missingDirs(dir string) ([]string, error) {
 			return missing, nil
 		}
 		if !os.IsNotExist(err) {
-			return nil, fmt.Errorf("atomicfile: inspect directory: %w", err)
+			return nil, err //nolint:wrapcheck // callers test os.IsNotExist and os.IsPermission, which do not unwrap fmt wrappers
 		}
 		missing = append(missing, p)
 		parent := filepath.Dir(p)
