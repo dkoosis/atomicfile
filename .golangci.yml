@@ -1,68 +1,247 @@
-# atomicfile — fleet lint floor (bugclasses baseline, decision d7ea466a8172).
-# The floor guarantees the six error-handling linters below on top of
-# golangci's standard defaults; per-repo extras layer on top.
-#
-# The lintbrush ruleguard pack (bugclasses + modern.go) is layered on the
-# floor: the rule files under .golangci-rules/ are byte copies of
-# cc-plugins/plugins/lintbrush/gorules, refreshed by adopt-pack.sh and
-# guarded by `make pack-drift`.
-
 version: "2"
 
+# atomicfile: the fleet lint set (copied from sdlc, which copied ferret's), plus
+# atomicfile's own forbidigo scope. cfm-pxx.11.
+# Rule 2 (raw-state-write) is not listed in the ruleguard glob: this module is
+# the durable-write helper that rule points other repos at.
+
+run:
+  modules-download-mode: readonly
+  tests: true
+
 linters:
+  # bugclasses baseline floor (ccp-sbp.2). `standard`
+  # keeps golangci's own defaults (errcheck, govet, ineffassign, staticcheck,
+  # unused) under this repo's richer config, so the floor is never below the six
+  # shared linters. contextcheck is deliberately NOT enabled — advisory only.
   default: standard
   enable:
+    # Error handling
+    - dupl
+    - err113
+    - errchkjson
+    - errorlint
     - nilerr
-    - rowserrcheck
-    - noctx
-    - staticcheck    # explicit: a default, but the floor names it
-    - nolintlint
-    - gocritic
+    - nilnesserr
+
+    # Safety
+    - bodyclose
+    - containedctx
     - forbidigo
+    - forcetypeassert
+    - gosec
+    - noctx
+    - predeclared
+    - rowserrcheck
+    - sqlclosecheck
+
+    # Complexity
+    - cyclop
+    - funlen
+    - gocognit
+    - gocyclo
+    - nestif
+
+    # Enum & type safety
+    - exhaustive
+    - makezero
+    - musttag
+    - reassign
+
+    # Style & correctness
+    - asciicheck
+    - copyloopvar
+    - dupword
+    - durationcheck
+    - errname
+    - exptostd
+    - fatcontext
+    - gocheckcompilerdirectives
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - grouper
+    - inamedparam
+    - intrange
+    - iotamixing
+    - loggercheck
+    - misspell
+    - modernize
+    - nakedret
+    - nilnil
+    - nolintlint
+    - prealloc
+    - recvcheck
+    - revive
+    - sloglint
+    - staticcheck    # baseline floor: a golangci default, named explicitly
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+
+    # Performance
+    - mirror
+    - perfsprint
+
+    # Testing
+    - testifylint
+    - thelper
+    - usetesting
+
+  disable:
+    - godox
+    - wsl
 
   settings:
+    exhaustive:
+      # A default clause signifies the remaining enum cases are consciously
+      # handled — required for subset switches (e.g. dialogue.Move v1 handles
+      # repair/accept and defaults the neutral + reserved-v2 cases).
+      default-signifies-exhaustive: true
     errcheck:
-      # STRICT. exclude-functions lists only calls whose dropped error is
-      # genuinely fine — never a path/package blanket.
+      # A blank-discarded error (x, _ := f(), _ = f()) is a finding in non-test
+      # code. A deliberate discard names itself: //nolint:errcheck // reason.
+      check-blank: true
       exclude-functions:
         - (io.Closer).Close
         - (*os.File).Close
-        - fmt.Fprint
         - fmt.Fprintf
-        - fmt.Fprintln
-        - fmt.Print
         - fmt.Printf
+        - fmt.Print
         - fmt.Println
-
-    nolintlint:
-      require-explanation: true   # //nolint without a reason fails
-      require-specific: true      # //nolint must name the linter
-
+        - fmt.Fprint
+        - fmt.Fprintln
+    goconst:
+      min-len: 4
+      min-occurrences: 5
+      ignore-tests: true
     gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+      # bugclasses pack: the ruleguard checker runs the shared machine rules for
+      # the recurring cross-repo Go defect classes. Rules live in .golangci-rules/,
+      # a verbatim copy of the pack, guarded by repo-standard's lint-pack rule.
       enabled-checks:
         - ruleguard
       settings:
         ruleguard:
           # ${base-path} = the .golangci.yml directory (golangci-lint v2).
-          # Rule 2 (raw-state-write) is opt-in and not listed here.
           rules: "${base-path}/.golangci-rules/bugclasses.go,${base-path}/.golangci-rules/modern.go"
-          # Fail the run on rule-compile errors, don't silently skip them.
+          # Fail the run on rule-compile errors — never silently skip them.
           failOn: dsl
-
+      disabled-checks:
+        # %#q falls back to double quotes when the string holds a backtick,
+        # so the suggested fix changes output. Markdown wants the backtick.
+        - sprintfQuotedString
+        - appendCombine
+        - commentFormatting
+        - deprecatedComment
+        - hugeParam
+        - ifElseChain
+        - unlambda
     forbidigo:
-      # Pack rule 5: context.Background() deep in long-lived code should thread
-      # the caller/shutdown ctx. Types-aware so a `ctx.Background` field can't
-      # false-fire.
+      # bugclasses rule 5: context.Background() deep in long-lived code should
+      # thread the caller/shutdown ctx. Types-aware so a `ctx.Background` field
+      # can't misfire. atomicfile is a library with no cmd/ or main.go, so a
+      # fresh root context is legitimate only in tests (exclusion below).
       analyze-types: true
       forbid:
         - pattern: '^context\.Background$'
           msg: "thread the caller/shutdown ctx; context.Background belongs only at a daemon's root (main/startup)"
+    cyclop:
+      max-complexity: 15
+    funlen:
+      lines: 80
+      statements: 40
+    gocognit:
+      min-complexity: 15
+    gocyclo:
+      min-complexity: 15
+    nestif:
+      min-complexity: 5
+    nakedret:
+      max-func-lines: 20
+    revive:
+      severity: warning
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+        - name: bare-return
+          disabled: true
+        - name: var-naming
+          disabled: false
+        - name: context-as-argument
+          disabled: false
+        - name: error-return
+          disabled: false
+        - name: dot-imports
+          disabled: false
+        - name: waitgroup-by-value
+          disabled: false
+    staticcheck:
+      checks:
+        - all
+    testifylint:
+      enable-all: true
+    nolintlint:
+      require-explanation: true
+      require-specific: true
 
   exclusions:
     generated: lax
+    paths:
+      - \.claude/ # sub-agent worktree copies share the module path
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      # Rule 5 is scoped to this repo's layout: atomicfile is a library with
-      # no cmd/ or main.go, so a fresh root context is legitimate only in tests.
-      - linters: [forbidigo]
+      # Test files: relax security, complexity, and context requirements
+      - linters:
+          - dupl
+        path: _test\.go
+      - linters:
+          - gosec
+        path: _test\.go
+      - linters:
+          - cyclop
+          - funlen
+          - gocognit
+          - gocyclo
+          - nestif
+        path: _test\.go
+      - linters:
+          - noctx
+        path: _test\.go
+      - linters:
+          - unparam
+        path: _test\.go
+      - linters:
+          - gocritic
+        path: cmd/.*/main\.go
+        text: exitAfterDefer
+      - linters:
+          - forbidigo
         path: '_test\.go$'
         text: 'context\.Background'
+      # check-blank applies to non-test code only. A blank assignment (`x, _ := f()`,
+      # `_ = g()`) in a _test.go file is not reported; a bare unchecked `g()` in a
+      # test still is.
+      - path: _test\.go$
+        linters:
+          - errcheck
+        text: Error return value
+        source: '(^|[^A-Za-z0-9_.])_\s*(,\s*[A-Za-z0-9_]+\s*)*(:=|=[^=])|,\s*_\s*(:=|=[^=])'
+
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - \.claude/
