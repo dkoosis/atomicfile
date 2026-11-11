@@ -85,7 +85,7 @@ func TestWriteFileFunc(t *testing.T) {
 		err := WriteFileFunc(path, 0o644, func(w io.Writer) error {
 			for i := range 3 {
 				if _, err := fmt.Fprintf(w, "chunk-%d\n", i); err != nil {
-					return err
+					return fmt.Errorf("write chunk: %w", err)
 				}
 			}
 			return nil

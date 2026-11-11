@@ -102,8 +102,10 @@ func TestWithMkdirAll(t *testing.T) {
 		path := filepath.Join(root, "a", "b", "out.txt")
 
 		err := WriteFileFunc(path, 0o644, func(w io.Writer) error {
-			_, err := io.WriteString(w, "streamed")
-			return err
+			if _, err := io.WriteString(w, "streamed"); err != nil {
+				return fmt.Errorf("write body: %w", err)
+			}
+			return nil
 		}, WithMkdirAll(0o755))
 		if err != nil {
 			t.Fatalf("WriteFileFunc: %v", err)

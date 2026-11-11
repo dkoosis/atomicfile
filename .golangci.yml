@@ -18,6 +18,9 @@ linters:
   enable:
     # Error handling
     - dupl
+    - godoclint
+    - unqueryvet
+    - wrapcheck
     - err113
     - errchkjson
     - errorlint
