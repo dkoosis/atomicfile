@@ -40,7 +40,7 @@ jobs:
             echo "run_check=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # The docs-only set is conform-to-sdlc's (ci-docs-skip): drop entries to
+          # The docs-only set is repo-standard's (ci-docs-skip): drop entries to
           # narrow it; adding one is a finding.
           run_check="$(git diff --name-status --no-renames "$base" "$head" | awk -F'\t' '
             NF < 2 { next }
@@ -78,7 +78,7 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       # CI = the same gate a developer runs; no verb re-implemented in YAML
-      # (conform-to-sdlc ci-gate rule). check runs vet + lint + test + build + conform-to-sdlc.
+      # (repo-standard ci-gate rule). check runs vet + lint + test + build + repo-standard.
       - name: check
         if: needs.detect.outputs.run_check == 'true'
         run: make check

@@ -1,8 +1,10 @@
 package atomicfile
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"syscall"
 )
 
@@ -56,41 +58,49 @@ func WithMkdirAll(perm os.FileMode) Option {
 // every directory it creates so that the new entry is crash-durable. sync is
 // the directory-fsync function — syncDir in production, a recorder in tests.
 func mkdirAllSync(dir string, perm os.FileMode, sync func(string) error) error {
-	// Walk up from dir collecting the components that do not exist yet.
-	var missing []string
-	for p := dir; ; {
-		fi, err := os.Stat(p)
-		if err == nil {
-			if !fi.IsDir() {
-				return &os.PathError{Op: "mkdir", Path: p, Err: syscall.ENOTDIR}
-			}
-			break
-		}
-		if !os.IsNotExist(err) {
-			return err
-		}
-		missing = append(missing, p)
-		parent := filepath.Dir(p)
-		if parent == p {
-			break // reached the filesystem root
-		}
-		p = parent
+	missing, err := missingDirs(dir)
+	if err != nil {
+		return err
 	}
 
 	// Create shallowest-first. After each mkdir, fsync the parent directory
 	// that now holds the new entry: without that fsync the directory is no
 	// more durable than an un-fsynced rename.
-	for i := len(missing) - 1; i >= 0; i-- {
-		if err := os.Mkdir(missing[i], perm); err != nil {
+	for _, d := range slices.Backward(missing) {
+		if err := os.Mkdir(d, perm); err != nil {
 			// Tolerate a concurrent creator winning the race, but only if
 			// what exists now is really a directory.
-			if fi, statErr := os.Stat(missing[i]); statErr != nil || !fi.IsDir() {
-				return err
+			if fi, statErr := os.Stat(d); statErr != nil || !fi.IsDir() {
+				return err //nolint:wrapcheck // callers test os.IsNotExist and os.IsPermission, which do not unwrap fmt wrappers
 			}
 		}
-		if err := sync(filepath.Dir(missing[i])); err != nil {
+		if err := sync(filepath.Dir(d)); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// missingDirs walks up from dir and returns the components that do not exist
+// yet, deepest first. It fails if an existing component is not a directory.
+func missingDirs(dir string) ([]string, error) {
+	var missing []string
+	for p := dir; ; {
+		fi, err := os.Stat(p)
+		if err == nil {
+			if !fi.IsDir() {
+				return nil, &os.PathError{Op: "mkdir", Path: p, Err: syscall.ENOTDIR}
+			}
+			return missing, nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return nil, err //nolint:wrapcheck // callers test os.IsNotExist and os.IsPermission, which do not unwrap fmt wrappers
+		}
+		missing = append(missing, p)
+		parent := filepath.Dir(p)
+		if parent == p {
+			return missing, nil // reached the filesystem root
+		}
+		p = parent
+	}
 }

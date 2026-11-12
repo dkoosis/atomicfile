@@ -70,7 +70,7 @@ import (
 func WriteFile(path string, data []byte, perm os.FileMode, opts ...Option) error {
 	return WriteFileFunc(path, perm, func(w io.Writer) error {
 		_, err := w.Write(data)
-		return err
+		return err //nolint:wrapcheck // the writer's error passes through verbatim, as WriteFileFunc's fn errors do
 	}, opts...)
 }
 
@@ -90,12 +90,12 @@ func WriteFileFunc(path string, perm os.FileMode, fn func(w io.Writer) error, op
 		renameio.WithPermissions(perm),
 	)
 	if err != nil {
-		return err
+		return err //nolint:wrapcheck // callers test os.IsNotExist and os.IsPermission, which do not unwrap fmt wrappers
 	}
 	defer pf.Cleanup() //nolint:errcheck // best-effort removal of the temp file on the error paths
 
 	if err := fn(pf); err != nil {
-		return err
+		return err // documented contract: the caller's fn error is returned verbatim
 	}
 	// Flush file data to stable storage (F_FULLFSYNC on darwin) before the
 	// rename publishes it.
@@ -103,7 +103,7 @@ func WriteFileFunc(path string, perm os.FileMode, fn func(w io.Writer) error, op
 		return err
 	}
 	if err := pf.CloseAtomicallyReplace(); err != nil {
-		return err
+		return err //nolint:wrapcheck // callers test os.IsNotExist and os.IsPermission, which do not unwrap fmt wrappers
 	}
 	// Flush the directory entry: without this the rename itself is not
 	// crash-durable.
@@ -114,7 +114,7 @@ func WriteFileFunc(path string, perm os.FileMode, fn func(w io.Writer) error, op
 func syncDir(dir string) error {
 	d, err := os.Open(dir)
 	if err != nil {
-		return err
+		return err //nolint:wrapcheck // callers test os.IsNotExist and os.IsPermission, which do not unwrap fmt wrappers
 	}
 	// Read-only fd; the fsync is the operation that matters. (*os.File).Close
 	// is in the floor's errcheck exclude-functions — no directive needed.

@@ -1,6 +1,8 @@
 package atomicfile
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -8,6 +10,9 @@ import (
 	"sync"
 	"testing"
 )
+
+// errBodyFailed is the fn error the verbatim-passthrough test injects.
+var errBodyFailed = errors.New("body failed")
 
 func TestWriteFile(t *testing.T) {
 	t.Run("creates new file with perm", func(t *testing.T) {
@@ -80,7 +85,7 @@ func TestWriteFileFunc(t *testing.T) {
 		err := WriteFileFunc(path, 0o644, func(w io.Writer) error {
 			for i := range 3 {
 				if _, err := fmt.Fprintf(w, "chunk-%d\n", i); err != nil {
-					return err
+					return fmt.Errorf("write chunk: %w", err)
 				}
 			}
 			return nil
@@ -102,9 +107,8 @@ func TestWriteFileFunc(t *testing.T) {
 			t.Fatalf("seed: %v", err)
 		}
 
-		wantErr := fmt.Errorf("body failed")
-		err := WriteFileFunc(path, 0o644, func(io.Writer) error { return wantErr })
-		if err != wantErr { //nolint:errorlint // the exact error must pass through unwrapped
+		err := WriteFileFunc(path, 0o644, func(io.Writer) error { return errBodyFailed })
+		if err != errBodyFailed { //nolint:errorlint,err113 // the exact error must pass through unwrapped
 			t.Fatalf("err = %v, want the fn error verbatim", err)
 		}
 
@@ -135,16 +139,14 @@ func TestReplaceIsAtomicUnderConcurrentReads(t *testing.T) {
 
 	const rounds = 50
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+	wg.Go(func() {
 		for i := 1; i <= rounds; i++ {
 			if err := WriteFile(path, body(i), 0o644); err != nil {
 				t.Errorf("writer round %d: %v", i, err)
 				return
 			}
 		}
-	}()
+	})
 
 	for range 200 {
 		got, err := os.ReadFile(path)
@@ -162,4 +164,29 @@ func TestReplaceIsAtomicUnderConcurrentReads(t *testing.T) {
 		}
 	}
 	wg.Wait()
+}
+
+// Whatever the body, a successful WriteFile leaves exactly those bytes at the
+// path and no temp file beside it.
+func FuzzWriteFileRoundTrip(f *testing.F) {
+	f.Add([]byte(""))
+	f.Add([]byte("state"))
+	f.Add([]byte{0x00, 0xff, '\n'})
+	f.Fuzz(func(t *testing.T, data []byte) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "state.bin")
+		if err := WriteFile(path, data, 0o644); err != nil {
+			t.Fatalf("WriteFile: %v", err)
+		}
+		got, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("read: %v", err)
+		}
+		if !bytes.Equal(got, data) {
+			t.Fatalf("read %q, want %q", got, data)
+		}
+		if entries, _ := os.ReadDir(dir); len(entries) != 1 {
+			t.Fatalf("temp file littered: %v", entries)
+		}
+	})
 }

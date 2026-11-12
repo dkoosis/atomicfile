@@ -3,7 +3,7 @@
 atomicfile provides atomic, crash-durable file replacement for Go — a thin wrapper over write-temp-then-rename with the fsyncs that make it survive a crash.
 
 **Direction:** none yet — this repo has no NORTH_STAR.md and no page at
-`~/Projects/kg/Project/atomicfile/`. `docs/conform.json` waives the roadmap rule with
+`~/Projects/kg/Project/atomicfile/`. `docs/repo-standard.json` waives the roadmap rule with
 that reason; writing a ★ line is dk's call (sd-mzgy.9).
 **The queue:** bd — `bd ready` / `bd show <id>` / `bd update <id> --claim` /
 `bd close <id>`. Persistent knowledge: `bd remember`, `bd memories <keyword>` —
