@@ -1,6 +1,6 @@
 module github.com/dkoosis/atomicfile
 
-go 1.26.4
+go 1.26.11
 
 require (
 	github.com/google/renameio/v2 v2.0.2
