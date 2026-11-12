@@ -1,6 +1,7 @@
 package atomicfile
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"slices"
@@ -92,7 +93,7 @@ func missingDirs(dir string) ([]string, error) {
 			}
 			return missing, nil
 		}
-		if !os.IsNotExist(err) {
+		if !errors.Is(err, os.ErrNotExist) {
 			return nil, err //nolint:wrapcheck // callers test os.IsNotExist and os.IsPermission, which do not unwrap fmt wrappers
 		}
 		missing = append(missing, p)

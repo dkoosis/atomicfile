@@ -157,7 +157,7 @@ func TestWithoutMkdirAllNothingIsCreated(t *testing.T) {
 	if err := WriteFile(path, []byte("x"), 0o644); err == nil {
 		t.Fatal("want error for missing parent dir")
 	}
-	if _, err := os.Stat(filepath.Join(root, "a")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(root, "a")); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("directory created without the option (stat err = %v)", err)
 	}
 	entries, err := os.ReadDir(root)
