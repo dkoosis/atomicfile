@@ -12,12 +12,12 @@ SHELL := /bin/bash
 
 # Tool pins. The audit tools run at these pins through `go run` or npx, so no one
 # installs them by hand. golangci-lint's pin lives in .sandbox/project.conf.
-REPO_STANDARD_VER := v0.4.0
+REPO_STANDARD_VER := v0.4.1
 NILAWAY_VER := v0.0.0-20260918162853-acb8859b9031
 GOVULNCHECK_VER := v1.9.0
 DEADCODE_VER := v0.52.0
 JSCPD_VER := 5.1.2
-OMITEMPTYSCALAR_VER := v0.4.0
+OMITEMPTYSCALAR_VER := v0.4.1
 
 .PHONY: help check audit vet lint test build race fuzz dupe nilcheck deadcode omitempty vuln standard clean
 
