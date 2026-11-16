@@ -12,12 +12,11 @@ SHELL := /bin/bash
 
 # Tool pins. The audit tools run at these pins through `go run` or npx, so no one
 # installs them by hand. golangci-lint's pin lives in .sandbox/project.conf.
-REPO_STANDARD_VER := v0.4.0
 NILAWAY_VER := v0.0.0-20260918162853-acb8859b9031
 GOVULNCHECK_VER := v1.9.0
 DEADCODE_VER := v0.52.0
 JSCPD_VER := 5.1.2
-OMITEMPTYSCALAR_VER := v0.4.0
+OMITEMPTYSCALAR_VER := v0.4.1
 
 .PHONY: help check audit vet lint test build race fuzz dupe nilcheck deadcode omitempty vuln standard clean
 
@@ -79,8 +78,8 @@ vuln: ## Scan for known vulnerabilities (govulncheck, pinned)
 	go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VER) ./...
 
 # Fleet gate: repo-standard grades the tree the rest of check passed.
-standard: ## Run repo-standard (fleet SDLC checker) against this repo
-	go run github.com/dkoosis/repo-standard/cmd/repo-standard@$(REPO_STANDARD_VER)
+standard: ## Run the current repo-standard (main) against this repo
+	GOPRIVATE=github.com/dkoosis/repo-standard go run github.com/dkoosis/repo-standard/cmd/repo-standard@main
 
 clean: ## Remove build outputs
 	go clean ./...
