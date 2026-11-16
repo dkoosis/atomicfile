@@ -7,5 +7,5 @@ toolchain go1.27.4
 require (
 	github.com/google/renameio/v2 v2.0.2
 	github.com/quasilyte/go-ruleguard/dsl v0.3.23
-	golang.org/x/sys v0.47.0
+	golang.org/x/sys v0.50.0
 )
